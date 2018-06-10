@@ -1,0 +1,571 @@
+---
+title: 'Multiple Linear Regression: Cereal Ratings'
+author: "Ellen Chancey"
+date: "December 10, 2017"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# cereal final project
+
+# https://www.kaggle.com/crawford/80-cereals/data
+
+setwd("C:/Users/EC052367/Documents/MS-ASA/STAT 840 Linear Regression/Final Projects/cereal")
+
+library(leaps)
+library(faraway)
+
+
+############################### initial data evaluation ################################################
+
+cereal <- read.csv("cereal.csv")
+summary(cereal)
+
+xlist <- c(4:16)
+C1 <- cereal[,xlist]
+attach(C1)
+
+pairs(C1[1:6])
+pairs(C1[7:13])
+
+# rating (y)
+# calories
+# sugar
+
+cor(C1)
+# sugar
+# calories
+# fiber
+# protein
+
+# for loop for boxplots and strip charts
+for (i in 1:13){
+  par(mfrow=c(1,2))
+  stripchart(C1[,i], main = names(C1)[i],vertical = T, method = "jitter")
+  boxplot(C1[,i], main = names(C1)[i])
+  par(mfrow=c(1,1))
+  }
+# exclude weight, shelf, vitamins
+# log(fiber)?
+
+############################### final dataset selection ################################################
+
+C2xlist <- c(4,5,6,7,8,9,10,11,16)
+C2 <- cereal[,C2xlist]
+
+# for loop for boxplots and strip charts
+for (i in 1:8){
+  par(mfrow=c(1,2))
+  stripchart(C2[,i], main = names(C2)[i],vertical = T, method = "jitter")
+  boxplot(C2[,i], main = names(C2)[i])
+  par(mfrow=c(1,1))
+}
+
+# check for multicolinearity on full model
+
+model <- lm(rating ~ calories + protein + fat + sodium + fiber + carbo + sugars + potass, data = C2)
+summary(model)
+
+# evaluating colinearity
+pairs(rating ~ calories + protein + fat + sodium, data = C2)
+pairs(rating ~ fiber + carbo + sugars + potass, data = C2)
+cor(C2)
+# there is not multicolinearity here, largest is sugar with calories
+
+
+############################### automoated variable selection ################################################
+# regsubsets from leaps package
+model2 <- regsubsets(rating ~ calories + protein + fat + sodium + fiber + carbo + sugars + potass, data = C2)
+modelsum <- summary(model2)
+modelsum
+
+modelsum$cp # want it close to p (number of variables)
+modelsum$adjr2 # want it high
+modelsum$bic # want it low
+
+# none of the Cp values are good, model four gets a lot of adjusted R2, and has a low, but not the lowest model
+# keeping a parsimonious model in mind
+### model four is selected 
+
+
+############################### set up selected model ################################################
+
+C3xlist <- c(3,4,5,7,9)
+C3 <- C2[,C3xlist]
+  
+model4 <- lm(rating ~ fat + sodium + fiber + sugars, data = C2)
+model4sum <- summary(model4)
+model4sum
+
+
+############################### evaluate selected model ################################################
+
+# added variable plots
+prplot(model,1)
+prplot(model,2)
+prplot(model,3)
+prplot(model,4)
+prplot(model,5)
+prplot(model,6)
+prplot(model,7)
+prplot(model,8)
+
+############### multicolinearity ############### 
+pairs(rating ~ fat + sodium + fiber + sugars, data = C2)
+cor(C3)
+
+## Variance Inflation Factor  (faraway package)
+# none should be above 10
+vif(model4)
+# all are very low
+
+############### outliars ############### 
+# cook's distance
+halfnorm(cooks.distance(model4))
+C3[58,]
+# obs 58 may be an outlier
+
+# fit the model without that obs
+summary(lm(rating ~ fat + sodium + fiber + sugars, data = C2, subset = -58))
+# removing this obs does improve the model
+# higher f stat, adjusted r2
+
+model5 <- lm(rating ~ fat + sodium + fiber + sugars, data = C2, subset = -58)
+model5sum <- summary(model5)
+
+############### normality ############### 
+
+# studentized deleted residuals
+plot(rstandard(model5)~predict(model5), xlab = expression(hat(Y)), ylab = "Studentized Deleted Residuals")
+abline(h=0)
+# consistent 
+
+# qqplot
+qqnorm(residuals(model5))
+qqline(residuals(model5))
+
+############### independence ############### 
+
+# sequence plot
+plot(residuals(model5),type="l",ylab=expression(e[i]),main="Sequence Plot of Residuals")
+points(residuals(model5),pch=16,col="darkgray")
+abline(0,0,lty=2)
+summary(lm(residuals(model5)[-1]~-1+residuals(model5)[-47]))
+# looks good
+
+
+############################### final model ###############################################
+
+summary(model5)
+anova(model5)
+confint(model5)
+
+pairs(rating ~ fat + sodium + fiber + sugars, subset = -58, data = C2)
+cor(C3)
+```
+
+## I. Introduction
+### A. Study Design
+
+A dataset containing nutritional information and consumer ratings of 77 varieties of cereal is obtained and is to be explored for a potential linear regression model. The outcome variable for this model, $Y$, is the consumer rating of the cereal, with nutritional data making up the predictor variables. These include the amount of calories, protein, fat, sodium, fiber, carbohydrates, sugar, and potatssium in a reccomended serving of the cereal. Data was obtained from [kaggle](https://www.kaggle.com/crawford/80-cereals/data).
+
+### B. Aims
+The purpose of this investigation is to determine a model that can estimate consumer ratings based on the nutritional content of the cereal in a parsimonious manner. The goal of the model is to indicate which nutritional data points may best indicate a highly regarded cereal.
+
+### C. Statistical Model
+A multiple linear regression model is considered. Let
+
+  \(Y_i = \) the consumer rating for the \(i^{th}\) cereal
+
+  \(X_{i1} =\) the number of calories for the \(i^{th}\) cereal, 
+
+  \(X_{i2} = \) the amount of protein (in grams) of the \(i^{th}\) cereal,  
+  
+  \(X_{i3} =\) the amount of fat (in grams) of the \(i^{th}\) cereal,  
+  
+  \(X_{i4} = \) the amount of sodium (in milligrams) of the \(i^{th}\) cereal,  
+  
+  \(X_{i5} =\) the amount of fiber (in grams) of the \(i^{th}\) cereal, 
+    
+  \(X_{i6} =\) the amount of carbohydrates (in grams) of the \(i^{th}\) cereal, 
+    
+  \(X_{i7} =\) the amount of sugar (in grams) of the \(i^{th}\) cereal, 
+    
+  \(X_{i8} =\) the amount of potassium (in milligrams) of the \(i^{th}\) cereal.  
+  
+The **initial model** is given by
+
+\[Y_i = \beta_0 + \beta_1X_{i1} + \beta_2X_{i2} + \beta_3X_{i3} + \beta_4X_{i4} + \beta_5X_{i5} + \beta_6X_{i6} + \beta_7X_{i7} + \beta_8X_{i8} + \varepsilon_i\]
+
+where \(\varepsilon_i \sim iidN(0,\sigma^2)\), \(i = 1, 2, . . , 77\), and \(\beta_0, \beta_1, . . . , \beta_8,\) and \(\sigma^2\) are the unknown model parameters.
+
+
+## II. Preliminary Analysis
+
+### A. Bivariate Associations  
+A pair of scatterplot matrices displays the relationship of all variables.
+```{r}
+pairs(C2[1:4])
+pairs(C2[5:9])
+
+```
+
+The following table provides the correlation coefficient of all associations in the dataset. Rating is most closely associated with sugar and calorie content.
+```{r}
+cor(C2)
+```
+
+### B. Screening of Covariates and Verification of Assumptions  
+The following method was used to select the final predictor variables that offer a parsimonious model. First, automatic variables selection was used to develop candidate models. Second, three criterion were considered for each model: $C_p$, BIC, and adjusted $R^2$. Partial residual plots, residual-versus-fitted plots, and measures of influence are investigated. One observation was identified as an influential outlier and was excluded from the final model. With that exclusion, there were no problems with the linearity, constant variance, independence, or normality of model residuals.
+
+Through this process, the following variables were removed from the model: calories, protein, carbohydrates, and potassium.
+
+### C. Final Model  
+The **final model** is given by
+
+\[Y_i = \beta_0 + \beta_1X_{i1} + \beta_2X_{i2} + \beta_3X_{i3} + \beta_4X_{i4} + \varepsilon_i\]
+
+where
+  \(Y_i = \) the consumer rating for the \(i^{th}\) cereal
+  
+  \(X_{i1} =\) the amount of fat (in grams) of the \(i^{th}\) cereal,  
+  
+  \(X_{i2} = \) the amount of sodium (in milligrams) of the \(i^{th}\) cereal,  
+  
+  \(X_{i3} =\) the amount of fiber (in grams) of the \(i^{th}\) cereal, 
+    
+  \(X_{i4} =\) the amount of sugar (in grams) of the \(i^{th}\) cereal.
+  
+
+where \(\varepsilon_i \sim iidN(0,\sigma^2)\), \(i = 1, 2, . . . , 77\), and \(\beta_0, \beta_1, . . . , \beta_4,\) and \(\sigma^2\) are the unknown model parameters.
+
+
+## III. Statistical Analysis  
+According to the fitted model, the best variables to consider when attempting to predict consumer rating are fat, sodium, fiber, and sugar. This model accounts for `r model5sum$adj.r.sqaured*100`% of variability in the data.
+```{r}
+model5sum
+```
+
+
+Correlation between ratings is highest with sugar content with -0.7596747, followed by fiber with 0.5841604, fat with -0.4092837, and -0.4012952 for sodium.
+```{r}
+cor(C3)
+```
+
+  
+## IV. Summary of Findings
+Based on these findings, the best nutritional components of cereal that can predict consumer ratings includes sugars, fiber, fat, and sodium. Higher sugar, fat, and sodium contents are associated with a lower rating, while cereals high in fiber are associated with a higher rating.
+
+
+## V. Appendix
+
+### A. Diagnostics for Predictors  
+To evaluate the potential predictors under consideration boxplots and stripcharts of each variable are considered.  
+
+*Comments*  
+* Many variables have clustered values including calories, protein, fat, and fiber  
+* Fiber and potassium are skewed  
+* No variables are eliminated based on this information.
+```{r}
+# for loop for boxplots and strip charts
+for (i in 1:8){
+  par(mfrow=c(1,2))
+  stripchart(C2[,i], main = names(C2)[i],vertical = T, method = "jitter")
+  boxplot(C2[,i], main = names(C2)[i])
+  par(mfrow=c(1,1))
+}
+```
+
+
+### B. Screening of Predictors
+
+#### 1. Added variable plots
+The following figures aim to determine if predictor variables conveys helpful information for predicting consumer ratings. Based on these plots, all variables appear to have an impact on ratings. No predictor variables are ruled out at this point.
+```{r}
+prplot(model,1)
+prplot(model,2)
+prplot(model,3)
+prplot(model,4)
+prplot(model,5)
+prplot(model,6)
+prplot(model,7)
+prplot(model,8)
+```
+
+
+#### 2. Evaluation of Multicolinearity  
+The following pair of scatterplots displays all potential predictor variables and is considered to determine if any variables are candidates for multicolinearity. These plots indicate that potassium and fiber have a linear relationship. These will be investigated further.
+```{r}
+pairs(rating ~ calories + protein + fat + sodium, data = C2)
+pairs(rating ~ fiber + carbo + sugars + potass, data = C2)
+```
+
+
+Pearson's correlation coefficient is also considered, and interpretation of these values is easier than reading the many scatterplots produced above. These values identify additional relationships. Relationships between potassium and fiber, potassium and protein, and sugar and calories are noted.  
+
+No variables are eliminated at this point. Formal measures of mutlicolinearity will be considered when the final model is selected.
+```{r}
+cor(C2)
+```
+
+
+#### 3. Automatic variable selection methods  
+Automatic variable selection is employed here to identify the best parsimonious models that should be considered.
+```{r}
+model2 <- regsubsets(rating ~ calories + protein + fat + sodium + fiber + carbo + sugars + potass, data = C2)
+modelsum <- summary(model2)
+modelsum
+```
+    
+Three criterion are considered for the models developed by the automatic variable selection function. These include $C_p$, BIC and adjusted $R^2$. In this instance, none of the $C_p$ values are good, the adjusted $R^2$ gets sufficiently high begining with the fourth model and does not lower, even though adjusted $R^2$ punishes the addition of variables. Later models have good BIC values as well.  
+
+Given that the goal of this analysis is to determine a parsimonious model, model four is selected for moving forward. This model has an adjusted $R^2$ value of 0.9582936 and a BIC of -227.08092. Model four is the model with the fewest predictor variables that obtains sufficient, although not the best, criterion values.
+```{r}
+modelsum$cp # want it close to p (number of variables)
+modelsum$adjr2 # want it high
+modelsum$bic # want it low
+```
+      
+The recommended model contains predictor variables fat, sodium, fiber, and sugar.
+```{r}
+# model four
+model4 <- lm(rating ~ fat + sodium + fiber + sugars, data = C2)
+model4sum <- summary(model4)
+model4sum
+```
+
+#### 4. Formal testing of multicolinearity  
+It is important at this stage to consider if multicolinearity exists in the selected model, because multicolinearity existed between some variables in the full model.  
+The variance inflation factor of each variable is considered. Values above ten indicate the existence of multicolinearity. The VIF values for this model are very low and indicate that multicolinearity is not present.
+```{r}
+vif(model4)
+```
+  
+#### 5. Preliminary model  
+The preliminary model is shown below.
+```{r}
+model4sum
+```
+
+### C. Residual Diagnostics
+
+#### 1. Influence  
+Cook's Distance is considered here to identify any observations that have an inflated influence on the model. The figure below graphically represents each observation's Cook's Distance. Based on this, observation 58 should be further evaluated and considered for exclusion.
+```{r}
+# cook's distance
+halfnorm(cooks.distance(model4))
+```
+
+Consider the details of observation 58. A negative sugar value may be a result of data entry error. In addition, the sodium value for this observation is one of the smallest.
+```{r}
+C3[58,]
+```
+
+In order to determine if this observation has an undue influence on the model, the model is fitted without observation 58. Doing so improves both the adjusted $R^2$ value and the F statistic. As a result, this observation will  be exlcuded from analysis.
+```{r}
+# fit the model without that obs
+summary(lm(rating ~ fat + sodium + fiber + sugars, data = C2, subset = -58))
+```
+
+
+```{r}
+# establish new model
+model5 <- lm(rating ~ fat + sodium + fiber + sugars, data = C2, subset = -58)
+```
+
+#### 2. Normality and constant variance  
+The normality of residuals is evaluated for normality and constancy in the following figures.  
+
+Looking at the studentized deleted residuals, there is dispersion around zero without a distinct trend. This figure suggests a linear relationship and normal residuals.
+```{r}
+# studentized deleted residuals
+plot(rstandard(model5)~predict(model5), xlab = expression(hat(Y)), ylab = "Studentized Deleted Residuals")
+abline(h=0)
+# consistent 
+```
+
+The QQ plot for this model indicates that normality of residuals is upheld.
+```{r}
+# qqplot
+qqnorm(residuals(model5))
+qqline(residuals(model5))
+```
+
+#### 3. Independence  
+To evaluate the independence of residuals, a sequence plot is considered. The sequence plot indicates that there is no trend in residuals for observation. Based on this, residuals are determined to be independent.
+```{r}
+# sequence plot
+plot(residuals(model5),type="l",ylab=expression(e[i]),main="Sequence Plot of Residuals")
+points(residuals(model5),pch=16,col="darkgray")
+abline(0,0,lty=2)
+```
+
+### D. Full Script
+```{r eval=FALSE}
+# cereal final project
+
+# https://www.kaggle.com/crawford/80-cereals/data
+
+setwd("C:/Users/EC052367/Documents/MS-ASA/STAT 840 Linear Regression/Final Projects/cereal")
+
+library(leaps)
+library(faraway)
+
+
+######################## initial data evaluation
+
+cereal <- read.csv("cereal.csv")
+summary(cereal)
+
+xlist <- c(4:16)
+C1 <- cereal[,xlist]
+attach(C1)
+
+# for loop for boxplots and strip charts
+for (i in 1:13){
+  par(mfrow=c(1,2))
+  stripchart(C1[,i], main = names(C1)[i],vertical = T, method = "jitter")
+  boxplot(C1[,i], main = names(C1)[i])
+  par(mfrow=c(1,1))
+  }
+# exclude weight, shelf, vitamins, cups
+
+######################## final dataset selection
+
+C2xlist <- c(4,5,6,7,8,9,10,11,16)
+C2 <- cereal[,C2xlist]
+
+pairs(C2[1:6])
+pairs(C2[7:13])
+
+# rating (y)
+# calories
+# sugar
+
+cor(C2)
+# sugar
+# calories
+# fiber
+# protein
+
+# for loop for boxplots and strip charts
+for (i in 1:8){
+  par(mfrow=c(1,2))
+  stripchart(C2[,i], main = names(C2)[i],vertical = T, method = "jitter")
+  boxplot(C2[,i], main = names(C2)[i])
+  par(mfrow=c(1,1))
+}
+
+# check for multicolinearity on full model
+
+model <- lm(rating ~ calories + protein + fat + sodium + fiber + carbo + sugars + potass, data = C2)
+summary(model)
+
+# evaluating colinearity
+pairs(rating ~ calories + protein + fat + sodium, data = C2)
+pairs(rating ~ fiber + carbo + sugars + potass, data = C2)
+cor(C2)
+# there is not multicolinearity here, largest is sugar with calories
+
+
+######################## automoated variable selection
+# regsubsets from leaps package
+model2 <- regsubsets(rating ~ calories + protein + fat + sodium + fiber + carbo + sugars + potass, data = C2)
+modelsum <- summary(model2)
+modelsum
+
+modelsum$cp # want it close to p (number of variables)
+modelsum$adjr2 # want it high
+modelsum$bic # want it low
+
+# none of the Cp values are good, model four gets a lot of adjusted R2, and has a low, but not the lowest model
+# keeping a parsimonious model in mind
+### model four is selected 
+
+
+######################## set up selected model
+
+C3xlist <- c(3,4,5,7,9)
+C3 <- C2[,C3xlist]
+  
+model4 <- lm(rating ~ fat + sodium + fiber + sugars, data = C2)
+model4sum <- summary(model4)
+model4sum
+
+
+######################## evaluate selected model
+
+# added variable plots
+prplot(model,1)
+prplot(model,2)
+prplot(model,3)
+prplot(model,4)
+prplot(model,5)
+prplot(model,6)
+prplot(model,7)
+prplot(model,8)
+
+############### multicolinearity
+pairs(rating ~ fat + sodium + fiber + sugars, data = C2)
+cor(C3)
+
+## Variance Inflation Factor  (faraway package)
+# none should be above 10
+vif(model4)
+# all are very low
+
+############### outliars
+# cook's distance
+halfnorm(cooks.distance(model4))
+C3[58,]
+# obs 58 may be an outlier
+
+# fit the model without that obs
+summary(lm(rating ~ fat + sodium + fiber + sugars, data = C2, subset = -58))
+# removing this obs does improve the model
+# higher f stat, adjusted r2
+
+model5 <- lm(rating ~ fat + sodium + fiber + sugars, data = C2, subset = -58)
+model5sum <- summary(model5)
+
+############### normality
+
+# studentized deleted residuals
+plot(rstandard(model5)~predict(model5), xlab = expression(hat(Y)), ylab = "Studentized Deleted Residuals")
+abline(h=0)
+# consistent 
+
+# qqplot
+qqnorm(residuals(model5))
+qqline(residuals(model5))
+
+############### independence
+
+# sequence plot
+plot(residuals(model5),type="l",ylab=expression(e[i]),main="Sequence Plot of Residuals")
+points(residuals(model5),pch=16,col="darkgray")
+abline(0,0,lty=2)
+summary(lm(residuals(model5)[-1]~-1+residuals(model5)[-47]))
+# looks good
+
+
+######################## final model
+
+summary(model5)
+anova(model5)
+confint(model5)
+
+pairs(rating ~ fat + sodium + fiber + sugars, subset = -58, data = C2)
+cor(C3)
+```
+
+
+```{r pressure, echo=FALSE}
+sessionInfo()
+```
+
+
