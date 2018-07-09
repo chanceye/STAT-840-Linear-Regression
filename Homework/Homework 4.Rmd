@@ -1,0 +1,99 @@
+---
+title: "Lesson 4 Homework"
+author: "Ellen Chancey"
+date: "October 29, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# set up
+setwd("C:/Users/EC052367/Documents/MS-ASA/STAT 840 Linear Regression/Homework/Lesson 4")
+rm(list=ls())
+```
+# QUESTION 2.8c
+
+# QUESTION 2.18  
+The t test statistic is more versatile than the f for test concerning $\beta_1$ beccause the t can do a one sided test, while the f cannot.
+
+# QUESTION 2.23 
+```{r}
+# read in data
+Q19<-read.csv("Q19.csv")
+# Establishing the linear equation 
+model<-lm(Q19$GPA~Q19$ACT)
+summary(model)
+```
+***
+
+#### Creating ANOVA table
+```{r}
+anova(model)
+```
+***
+MSR, 3.5878, estimates $\sigma^2$ + $\beta_1^2$ SSX (sum of squares of x)  
+MSE, 0.3883, estimates $\sigma^2$  
+MSR and MSE are equivalent when $\beta_1$is equal to zero, or when there is no relationship  
+***
+  
+#### F Statistic
+```{r}
+tss<-sum((Q19$GPA-mean(Q19$GPA))^2)
+rss<-deviance(model)
+fstat<-((tss-rss)/1)/(rss/df.residual(model))
+fprob<-1-pf(fstat,1,df.residual(model))
+fstat
+fprob
+```
+***
+$H_0$: $\beta_1$ = 0 true when F is close to 1  
+$H_1$: $\beta_1$ != 0  true when F is much larger than 1  
+F = 9.24 and because it is so far from 1, we can reject $H_0$ and conclude that $\beta_1$ is not zero, meaning that the full model is better than the reduced model.
+
+
+# Question 2.26
+```{r}
+# read in data
+Q122<-read.csv("Q122.csv")
+# Establishing the linear equation 
+m3<-lm(Q122$y~Q122$x)
+summary(m3)
+anova(m3)
+```
+***
+$H_0$: $\beta_1$ = 0 true when F is close to 1  
+$H_1$: $\beta_1$ != 0  true when F is much larger than 1  
+F = 506.5 and because it is so large (so far from 1), we can reject $H_0$ and conclude that $\beta_1$ is not zero. This means that the full model is better than the reduced model.  
+
+***
+#### R Squared
+```{r}
+R2<-summary(m3)$r.squared
+R2
+R<-sqrt(R2)
+R
+
+```
+$R^2$ indicates the model accounts for over 97% of variation. This is a good indicator that the model is accounting for variation.
+
+# QUESTION 2.31
+```{r}
+# read in data
+Q128<-read.csv("Q128.csv")
+# Establishing the linear equation 
+m4<-lm(Q128$y~Q128$x)
+summary(m4)
+anova(m4)
+```
+***
+Yes, the p values for the f and t are the same.  
+
+
+#### R Squared and R values
+```{r}
+R24<-summary(m4)$r.squared
+R4<-sqrt(R24)
+R24
+R4
+```
+While the F statistic indicates that the full model is better than the reduced model, this $R^2$ value indicates that the full model is still accounting for only 17% of variation.
