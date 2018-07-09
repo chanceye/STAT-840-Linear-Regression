@@ -1,0 +1,535 @@
+---
+title: "Lesson 5 Homework Question 3.31"
+author: "Ellen Chancey"
+date: "November 5, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# --- Lesson 5 Homework --- #
+# --- Set Up --- #
+# set working directory
+setwd("C:/Users/EC052367/Documents/MS-ASA/STAT 840 Linear Regression/Homework/Lesson 5")
+# clear the environment
+rm(list=ls())
+# --- Real Estate Question 3.31 --- #
+# import data
+C7 <- read.csv("C7 Real Estate.csv")
+# take a random sample of 200
+C7S <- C7[sample(1:nrow(C7), 200, replace = FALSE),]
+# model set up
+x <- C7S$sqft
+y <- C7S$price
+summary(x)
+summary(y)
+# basic plots
+# x
+plot(x, main = "Square Footage")
+boxplot(x, main = "Square Feet Boxplot")
+hist(x) # consider use of log transformation bc of shape
+plot(x, type = "l", main = "Square Footage", ylab = "Sq Ft") # sequence plot
+# y
+plot(y, main = "Sales Price")
+boxplot(y, main = "Sale Price Boxplot")
+hist(y) # consider use of log transformation bc of shape
+plot(y, type = "l", main = "Sales Price", ylab = "Sales Price") # sequence plot
+plot(x,y, xlab = "Square Feet", ylab = "Sales Price", 
+     main = "Relationship Between Square Footage and Sales Price")
+# linearity makes sense
+# model
+model<-lm(y~x)
+summary(model)
+plot(x,y, xlab = "Square Feet", ylab = "Sales Price", main = "Relationship Between Square Footage and Sales Price")
+abline(lm(model), col = "blue")
+# --- Linearity and Constanct of Variance --- #
+# residuals vs x
+plot(x,residuals(model), xlab = "Square Feet", ylab = expression(e[i]),
+     main = "Residuals versus X", pch = 16)
+abline(a=0, b=0, lty = 2) # adds a dotted line at y = 0
+# megaphone
+# absolute residuals vs x
+plot(x,abs(residuals(model)),xlab = "Square Feet", ylab = expression(e[i]),
+     main = "Absolute Residuals versus X", pch = 16)
+# megaphone
+# Breusch-Pagan Test
+# Tests H0: sigma^2 is a function of X 
+# versus H1: sigma^2 is not a function of X
+require("car")
+ncvTest(model)
+# large variable indicates rejection of H0, the error variance is not constant
+# --- Log Transformation --- #
+logx <- log(x)
+logy <- log(y)
+# logx
+plot(logx, main = "Square Footage")
+hist(logx) # consider use of log transformation bc of shape
+# logy
+plot(logy, main = "Sales Price")
+hist(logy) # consider use of log transformation bc of shape
+plot(logx,logy, xlab = "Square Feet", ylab = "Sales Price", 
+     main = "Relationship Between Square Footage and Sales Price")
+# model
+logmodel<-lm(logy~logx)
+summary(logmodel)
+plot(logx,logy, xlab = "Square Feet", ylab = "Sales Price", main = "Relationship Between Square Footage and Sales Price")
+abline(lm(logmodel), col = "blue")
+# --- Linearity and Constanct of Variance of Log Transformation --- #
+# residuals vs logx
+plot(logx,residuals(logmodel), xlab = "Square Feet", ylab = expression(e[i]),
+     main = "Residuals versus X", pch = 16)
+abline(a=0, b=0, lty = 2) # adds a dotted line at y = 0
+# no megaphone
+# absolute residuals vs logx
+plot(logx,abs(residuals(logmodel)),xlab = "Square Feet", ylab = expression(e[i]),
+     main = "Absolute Residuals versus X", pch = 16)
+# no megaphone
+# Breusch-Pagan Test
+# Tests H0: sigma^2 is a function of X 
+# versus H1: sigma^2 is not a function of X
+ncvTest(logmodel)
+# better value
+# --- No Outliers Identified --- #
+# --- Independence of Error Terms --- #
+plot(residuals(logmodel), type = "l", ylab =  expression(e[i]), main = "Sequence Plot of Residuals")
+points(residuals(logmodel), pch = 16, col = "darkgray")
+abline(0,0, lty = 2)
+# larger positive residuals early, larger negative residuals later, potential issue
+# --- Check Normality of Error Terms --- #
+qqnorm(residuals(logmodel), main = "Normal Probability Plot Residuals")
+qqline(residuals(logmodel))
+# has tails, but its not signficant enough to act
+hist(residuals(logmodel))
+# relatively normal
+# Although there are some tails, overall 
+# --- ANALYSIS --- #
+# --- Linear Relationship with T Test --- #
+summary(logmodel)
+plot(logx,logy, xlab = "Square Feet", ylab = "Sales Price", main = "Relationship Between Square Footage and Sales Price")
+abline(lm(logmodel), col = "blue")
+# p values of t test are good for beta_0 = 2.58448 and beta_1 = 1.28105
+# r squared is 0.7602
+# --- Confidence Band --- #
+newx <- seq(min(logx), max(logx), by=0.05)
+plot(logy~logx, xlab="Square Footage", pch=16, ylab="Sales Price",
+     main="Scatterplot of Square Footage and Sales Price")
+abline(logmodel, col = "blue")
+W <- sqrt(2*qf(0.95,2,58))
+SSX <- sum((logx - mean(logx))^2)
+ll <- fitted(logmodel) - W*(summary(logmodel)$sigma)*sqrt((1/60+(logx-mean(logx))^2/SSX))
+ul <- fitted(logmodel) + W*(summary(logmodel)$sigma)*sqrt((1/60+(logx-mean(logx))^2/SSX))
+lines(logx, ll, col="darkgray")
+lines(logx, ul, col="darkgray")
+# --- Prediction --- #
+Y.hat1 <- predict(logmodel,data.frame(logx=log(1100)),interval="prediction")
+Y.hat2 <- predict(logmodel,data.frame(logx=log(4900)),interval="prediction")
+Y.hat1 # 11.55574k
+Y.hat2 # 13.26954
+exp(Y.hat1) # $104,375
+exp(Y.hat2) # $707,530
+```
+
+
+### I. Study Design, Aims, and Model
+
+A. A study of home sale prices was initated, with data collected in 2002 on 522 real estate transactions. The key variable obtained for each home sale was the square footage. The data was subset by randomly selecting 200 of the 522 observations. The full data can be obtained from the textbook website that can be found [here](http://www.stat.ufl.edu/~rrandles/sta4210/Rclassnotes/data/textdatasets/KutnerData/Appendix%20C%20Data%20Sets/APPENC07.txt).  
+  
+B. Sales price is generally expected to increase with square footage. The goals of this analysis are to:
+  1. Test for a linear relationship between square footage and sales price
+  2. Determine the fit of the linear relationship esimated from the data.
+  3. Predict the sales price for homes of 1100 square feet and 4900 square feet.
+
+C. The simple linear regression model is considered where $Y_i$ = a continuous measure of sale price of the *ith* randomly selected property
+$X_i$ = known square footage of the *ith* randomly selected property
+with  
+$Y_i = \beta_0 + \beta_1X_i + \epsilon_i, i=1, 2,...,200$  
+where $\epsilon ~ iidN(0,\sigma^2)$ and $\beta_0, \beta_1, \sigma^2$ are the unknown parameters of interest.
+
+
+### II. Preliminary Analysis
+A. Figure 1 is a scatterplot that indicates a positive linear relationship between square footage and sale price after log transformation of both variables.
+
+```{r}
+plot(logx,logy, xlab = "Square Feet", ylab = "Sales Price", main = "Relationship Between Square Footage and Sales Price")
+abline(lm(logmodel), col = "blue")
+```
+
+B. No observations were idenified as potential outliers.
+
+C. The assumptions of linearity, constant error variance, independence of error terms, and normality of error terms are assessed after a log transformation by residual plots and hypothesis tests. The independence of error terms indicated larger positive residuals for small square footage values and larger negative residuals for larger square footage values, which may have an impact on analysis results. (See Appendix)
+
+### III. Statistical Analysis  
+The lm() function in R was used to estimate the least squares fit of the simple linear regression model. The final fitted model is given by
+
+$\hat{Y} = 2.78037 + 1.25716X$  
+and is show in Figure X as a blue line. The model indicates that square footage accounts for 71.31% of variation in sales price ($R^2=$.7131).
+
+1. A two sided t-test is used to select between  
+  $H_0: \beta_1 = 0$ and $H_1: \beta1 <> 0$  
+  with a type I error rate of $\alpha = 0.05$.  
+
+Since $b_1 = 1.25716$ is more than $492$ SE above what is expected if $H_0: \beta_1 = 0$ (p < 2.2e-16), $H_0$ is unlikely to have produced the observed data and is rejected. Thus, there is sufficient evidence of a linear association between square footage and sale price. 
+
+```{r}
+summary(logmodel)
+```
+
+
+2. Figure 2 displays a 95% confidence band on the regression line.
+```{r}
+newx <- seq(min(logx), max(logx), by=0.05)
+plot(logy~logx, xlab="Square Footage", pch=16, ylab="Sales Price",
+     main="Scatterplot of Square Footage and Sales Price")
+abline(logmodel, col = "blue")
+lines(logx, ll, col="darkgray")
+lines(logx, ul, col="darkgray")
+```
+
+3. The predicted sales price of homes of 1100 square feet and 4900 square feet are 108,194 dollars and 700,501 dollars, respectively.
+
+```{r}
+# --- Prediction --- #
+Y.hat1 <- predict(logmodel,data.frame(logx=log(1100)),interval="prediction")
+Y.hat2 <- predict(logmodel,data.frame(logx=log(4900)),interval="prediction")
+
+Y.hat1 # 11.55574k
+Y.hat2 # 13.26954
+
+exp(Y.hat1)
+exp(Y.hat2) 
+```
+
+
+### IV. Conclusions
+There is a positive linear relationship between square footage of a home and its sale price.  The fiited model is given by $\hat{y} = 2.78037 + 1.25716X$ when both x and y are log transformed. The residuals are largely as expected and the $R^2$ value of `r logmodel$r.squared`, indicating that the model has predictive power for sale price of homes given a known square footage.
+
+
+### V Appendices
+
+A. Diagnostics for Predictors
+
+I. Diagnostics of X
+Figure 3 is a scatter plot of square footage for *n*=200 location. The data set has a minimum square footage of `r (min(x))` and a maximum square footage of `r (max(x))`. Square footage appears to be well distributed.
+
+```{r}
+# basic plots
+# x
+plot(x, main = "Square Footage")
+
+```
+
+Figure 4 displays a boxplot of square footage for the same population. It indicates a mean of `r mean(x)` and demonstrates that while there are higher square footage values, most are around or below the mean.
+```{r}
+boxplot(x, main = "Square Feet Boxplot")
+```
+
+Figure 5 is a histogram of square footage for the same population of *n*=200. It demonstrates aa log distribution of x.
+```{r}
+hist(x) # consider use of log transformation bc of shape
+```
+
+Figure 6 is a sequence plot of square footage for the same population. It indicates that there is no relationship between the square footage value and the point at which the value was collected.
+```{r}
+plot(x, type = "l", main = "Square Footage", ylab = "Sq Ft") # sequence plot
+```
+
+***
+
+II. Diagnostic of Y
+
+Figure 7 is a scatter plot of the sales price for the same population of *n*=200. The data set has a minimum square footage of `r (min(y))` and a maximum square footage of `r (max(y))`. Sales price appears to be well distributed.
+```{r}
+# y
+plot(y, main = "Sales Price in Dollars")
+```
+
+Figure 8 displays a boxplot of sales price for the same population. It indicates a mean of `r mean(y)` and demonstrates that while there are higher prices, most are between the 25th and 75th quartiles.
+```{r}
+boxplot(y, main = "Sale Price Boxplot")
+```
+
+Figure 9 is a histogram of sales prices for the same population of *n*=200. It demonstrates aa log distribution of x.
+```{r}
+hist(y, main = "Sales Price in Dollars") # consider use of log transformation bc of shape
+```
+
+Figure 10 is a sequence plot of sales price for the same population. It indicates that there is no relationship between the square footage value and the point at which the value was collected.
+```{r}
+plot(y, type = "l", main = "Sales Price", ylab = "Sales Price") # sequence plot
+```
+
+
+
+III. Residual Analysis
+
+1) Linearity of Regression Function
+Figure 11 is a scatterplot of the residuals versus X, which Figure Y is a scatterplot of the absolute values of residuals versus X. Both figures demonstrate the "megaphone" shape associated with non-linearity of the model
+```{r}
+# --- Linearity and Constanct of Variance --- #
+
+# residuals vs x
+plot(x,residuals(model), xlab = "Square Feet", ylab = expression(e[i]),
+     main = "Residuals versus X", pch = 16)
+abline(a=0, b=0, lty = 2) # adds a dotted line at y = 0
+# megaphone
+
+# absolute residuals vs x
+plot(x,abs(residuals(model)),xlab = "Square Feet", ylab = expression(e[i]),
+     main = "Absolute Residuals versus X", pch = 16)
+# megaphone
+```
+
+In order to remedy the assumption of linearity, both the sales price and square footage undergo a log transformation.
+```{r}
+logx <- log(x)
+logy <- log(y)
+
+# logx
+plot(logx, main = "Square Footage")
+hist(logx) # consider use of log transformation bc of shape
+
+# logy
+plot(logy, main = "Log(Sales Price)")
+hist(logy) # consider use of log transformation bc of shape
+
+# model
+logmodel<-lm(logy~logx)
+summary(logmodel)
+
+plot(logx,logy, xlab = "Square Feet", ylab = "Sales Price", main = "Relationship Between Square Footage and Sales Price (log)")
+abline(lm(logmodel), col = "blue")
+```
+
+An analysis of the linearity of the regression function with the log value provides a better look at the residuals, which are dispered randomly.
+```{r}
+# residuals vs logx
+plot(logx,residuals(logmodel), xlab = "Square Feet", ylab = expression(e[i]),
+     main = "Residuals versus X", pch = 16)
+abline(a=0, b=0, lty = 2) # adds a dotted line at y = 0
+
+# Breusch-Pagan Test
+# Tests H0: sigma^2 is a function of X 
+# versus H1: sigma^2 is not a function of X
+ncvTest(logmodel)
+```
+2) Constant Error Variance
+Before the log transformation, the Bruesch-Pagan Test results in a large $\chi^2$ value, further undermining the linearity of the model.
+```{r}
+# Breusch-Pagan Test
+ncvTest(model)
+```
+
+After the log transformation, the Bruesch-Pagan Test results in a more acceptable $X^2$ resulting in a failure to reject $H_0$, and a lack of evidence that nonconstancy in error variance.
+```{r}
+# Breusch-Pagan Test
+ncvTest(logmodel)
+```
+
+3) There were no candidates for outlier testing, as figure x indicates.
+```{r}
+plot(logx,logy, xlab = "Square Feet", ylab = "Sales Price", main = "Relationship Between Square Footage and Sales Price")
+```
+
+4) Independence of Error Terms  
+Figure 12 is a sequence plot of the residuals of the log transformed model residuals to determine if correlation between error terms exists. There appears to be no relationship between the sequence and the residual.
+```{r}
+plot(residuals(logmodel), type = "l", ylab =  expression(e[i]), main = "Sequence Plot of Residuals")
+points(residuals(logmodel), pch = 16, col = "darkgray")
+abline(0,0, lty = 2)
+```
+
+5) Normality of Error Terms  
+Figure 13 is a QQ Plot of the residuals. The observed quantiles of the residuals match the expected quantiles, with the exception of some variance in the tails. The figure indicates that it is reasonable to maintain normality.
+```{r}
+qqnorm(residuals(logmodel), main = "Normal Probability Plot Residuals")
+qqline(residuals(logmodel))
+# has tails, but its not signficant enough to act
+
+```
+
+Furthermore, Figure 14, a histogram of the residuals confirms the normality of the residuals.
+```{r}
+hist(residuals(logmodel))
+# relatively normal
+# Although there are some tails, overall 
+```
+
+B. Raw Code
+```{r eval = FALSE}
+# --- Lesson 5 Homework --- #
+# --- Set Up --- #
+
+# set working directory
+setwd("C:/Users/EC052367/Documents/MS-ASA/STAT 840 Linear Regression/Homework/Lesson 5")
+
+# clear the environment
+rm(list=ls())
+
+
+# --- Real Estate Question 3.31 --- #
+
+# import data
+C7 <- read.csv("C7 Real Estate.csv")
+
+# take a random sample of 200
+C7S <- C7[sample(1:nrow(C7), 200, replace = FALSE),]
+
+# model set up
+x <- C7S$sqft
+y <- C7S$price
+
+summary(x)
+summary(y)
+
+# basic plots
+
+# x
+plot(x, main = "Square Footage")
+boxplot(x, main = "Square Feet Boxplot")
+hist(x) # consider use of log transformation bc of shape
+plot(x, type = "l", main = "Square Footage", ylab = "Sq Ft") # sequence plot
+
+# y
+plot(y, main = "Sales Price")
+boxplot(y, main = "Sale Price Boxplot")
+hist(y) # consider use of log transformation bc of shape
+plot(y, type = "l", main = "Sales Price", ylab = "Sales Price") # sequence plot
+
+plot(x,y, xlab = "Square Feet", ylab = "Sales Price", 
+     main = "Relationship Between Square Footage and Sales Price")
+
+# linearity makes sense
+
+# model
+model<-lm(y~x)
+summary(model)
+
+plot(x,y, xlab = "Square Feet", ylab = "Sales Price", main = "Relationship Between Square Footage and Sales Price")
+abline(lm(model), col = "blue")
+
+
+
+# --- Linearity and Constanct of Variance --- #
+
+# residuals vs x
+plot(x,residuals(model), xlab = "Square Feet", ylab = expression(e[i]),
+     main = "Residuals versus X", pch = 16)
+abline(a=0, b=0, lty = 2) # adds a dotted line at y = 0
+# megaphone
+
+# absolute residuals vs x
+plot(x,abs(residuals(model)),xlab = "Square Feet", ylab = expression(e[i]),
+     main = "Absolute Residuals versus X", pch = 16)
+# megaphone
+
+# Breusch-Pagan Test
+# Tests H0: sigma^2 is a function of X 
+# versus H1: sigma^2 is not a function of X
+require("car")
+ncvTest(model)
+
+# large variable indicates rejection of H0, the error variance is not constant
+
+
+# --- Log Transformation --- #
+
+logx <- log(x)
+logy <- log(y)
+
+# logx
+plot(logx, main = "Square Footage")
+hist(logx) # consider use of log transformation bc of shape
+
+# logy
+plot(logy, main = "Sales Price")
+hist(logy) # consider use of log transformation bc of shape
+
+plot(logx,logy, xlab = "Square Feet", ylab = "Sales Price", 
+     main = "Relationship Between Square Footage and Sales Price")
+
+# model
+logmodel<-lm(logy~logx)
+summary(logmodel)
+
+plot(logx,logy, xlab = "Square Feet", ylab = "Sales Price", main = "Relationship Between Square Footage and Sales Price")
+abline(lm(logmodel), col = "blue")
+
+
+# --- Linearity and Constanct of Variance of Log Transformation --- #
+
+# residuals vs logx
+plot(logx,residuals(logmodel), xlab = "Square Feet", ylab = expression(e[i]),
+     main = "Residuals versus X", pch = 16)
+abline(a=0, b=0, lty = 2) # adds a dotted line at y = 0
+# no megaphone
+
+# absolute residuals vs logx
+plot(logx,abs(residuals(logmodel)),xlab = "Square Feet", ylab = expression(e[i]),
+     main = "Absolute Residuals versus X", pch = 16)
+# no megaphone
+
+# Breusch-Pagan Test
+# Tests H0: sigma^2 is a function of X 
+# versus H1: sigma^2 is not a function of X
+ncvTest(logmodel)
+# better value
+
+
+# --- No Outliers Identified --- #
+
+
+# --- Independence of Error Terms --- #
+
+plot(residuals(logmodel), type = "l", ylab =  expression(e[i]), main = "Sequence Plot of Residuals")
+points(residuals(logmodel), pch = 16, col = "darkgray")
+abline(0,0, lty = 2)
+# larger positive residuals early, larger negative residuals later, potential issue
+
+
+# --- Check Normality of Error Terms --- #
+
+qqnorm(residuals(logmodel), main = "Normal Probability Plot Residuals")
+qqline(residuals(logmodel))
+# has tails, but its not signficant enough to act
+
+hist(residuals(logmodel))
+# relatively normal
+# Although there are some tails, overall 
+
+
+# --- ANALYSIS --- #
+
+# --- Linear Relationship with T Test --- #
+summary(logmodel)
+plot(logx,logy, xlab = "Square Feet", ylab = "Sales Price", main = "Relationship Between Square Footage and Sales Price")
+abline(lm(logmodel), col = "blue")
+
+# p values of t test are good for beta_0 = 2.58448 and beta_1 = 1.28105
+# r squared is 0.7602
+
+# --- Confidence Band --- #
+newx <- seq(min(logx), max(logx), by=0.05)
+plot(logy~logx, xlab="Square Footage", pch=16, ylab="Sales Price",
+     main="Scatterplot of Square Footage and Sales Price")
+abline(logmodel, col = "blue")
+
+W <- sqrt(2*qf(0.95,2,58))
+SSX <- sum((logx - mean(logx))^2)
+ll <- fitted(logmodel) - W*(summary(logmodel)$sigma)*sqrt((1/60+(logx-mean(logx))^2/SSX))
+ul <- fitted(logmodel) + W*(summary(logmodel)$sigma)*sqrt((1/60+(logx-mean(logx))^2/SSX))
+lines(logx, ll, col="darkgray")
+lines(logx, ul, col="darkgray")
+
+# --- Prediction --- #
+Y.hat1 <- predict(logmodel,data.frame(logx=log(1100)),interval="prediction")
+Y.hat2 <- predict(logmodel,data.frame(logx=log(4900)),interval="prediction")
+
+Y.hat1 # 11.55574k
+Y.hat2 # 13.26954
+
+exp(Y.hat1) # $104,375
+exp(Y.hat2) # $707,530
+
+sessioninfo()
+```
