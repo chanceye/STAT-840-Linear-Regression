@@ -1,0 +1,114 @@
+---
+title: "Homework 6"
+author: "Ellen Chancey"
+date: "November 18, 2017"
+output: html_document
+---
+## Chapter 7 Project 7.38 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("C:/Users/EC052367/Documents/MS-ASA/STAT 840 Linear Regression/Homework/Lesson 6")
+
+# clear the environment
+rm(list=ls())
+
+C1<- read.csv("C1 SENIC.csv")
+# summary(C1)
+
+# install packages
+library("Hmisc")
+library("rgl")
+library("rsq")
+library("dplyr")
+```
+
+Assigning variables
+```{r}
+# set variables
+y <- C1$los
+x1 <- C1$age
+x2 <- C1$ir
+x3 <- C1$rcr
+x4 <- C1$adc
+x5 <- C1$nn
+x6 <- C1$afs
+```
+
+Initial Model Views
+```{r}
+plot3d(x1,y,x2,type="h") # initial 3d view
+points3d(x1,y,x2,col="red") # makes dot red
+```
+
+```{r}
+pairs(y~x1+x2)
+```
+
+Model Set Up
+```{r}
+# model set up
+m1 <- lm(y~x1+x2)
+summary(m1)
+```
+
+Setup Alternative Models
+```{r}
+# note that model is one number below the added variable
+# m1 acts as the reduced model
+m2 <- lm(y~x1+x2+x3)
+m3 <- lm(y~x1+x2+x4)
+m4 <- lm(y~x1+x2+x5)
+m5 <- lm(y~x1+x2+x6)
+```
+
+
+#### A) Calculating the Coefficient of Partial Determination
+```{r}
+rsq1 <- rsq.partial(m1,m2)
+rsq2 <- rsq.partial(m1,m3)
+rsq3 <- rsq.partial(m1,m4)
+rsq4 <- rsq.partial(m1,m5)
+cpd <- c(rsq1$partial.rsq, rsq2$partial.rsq, rsq3$partial.rsq, rsq4$partial.rsq)
+models <- c(2:5)
+cpd_all <- cbind(models,cpd)
+cpd_all
+
+```
+
+#### B) Routine Culture Ratio  
+Model three reduces the error by the largest amount. Model two introduces $x_4$, average daily census.  
+
+
+#### C) Testing Routine Culturing Ratio
+$H_0: \beta_4 = 0$  
+$H_1: \beta_4 <> 0$
+```{r}
+# compare model one and three (with and without x_4)
+anova2 <- anova(m1,m3)
+p<- anova2$`Pr(>F)`[2]
+anova2
+```
+
+#### F Test
+The p value `r p` is sufficient to reject the null Hypothesis, meaning $\beta_4$ is not equal to zero and can improve the model.
+
+#### F Test of Other Xs
+```{r}
+anova1 <- anova(m1,m2)
+anova2 <- anova(m1,m3)
+anova3 <- anova(m1,m4)
+anova4 <- anova(m1,m5)
+
+f_all <- c(anova1$F[2],anova2$F[2],anova3$F[2],anova4$F[2])
+p_all <- c(anova1$`Pr(>F)`[2],anova2$`Pr(>F)`[2],anova3$`Pr(>F)`[2],anova4$`Pr(>F)`[2])
+f_p_all<- cbind(models,f_all,p_all)
+f_p_all
+```
+
+#### Comparing F tests of other variables  
+Models four and five, which add number of nurses and available facilities and services, respectively, would also improve the model. These would not improve as much as model three. Model two does not reject the null hypothesis, and therefore would not add anything to the model.
+
+```{r session-info}
+sessionInfo()
+```
