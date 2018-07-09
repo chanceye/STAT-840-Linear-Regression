@@ -1,0 +1,123 @@
+---
+title: "Lesson 2 Homework"
+author: "Ellen Chancey"
+date: "September 24, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("C:/Users/EC052367/Documents/MS-ASA/STAT 840 Linear Regression/Homework/Lesson 2")
+rm(list=ls())  
+Q19<-read.csv("Q19.csv")
+Q20<-read.csv("Q20.csv")
+C2<-read.csv("C2.csv")
+```
+
+### 1.17  
+$b_0$ and $b_1$ are not estimated by the method of least sqaures. Rather, they are the estimators produced by the method of least sqaures, and they are estimating $\beta_0$ and $\beta_1$. 
+  
+### 2.4a
+```{r}
+model19<-lm(Q19$GPA~Q19$ACT)
+summary(model19)
+
+X.bar <- mean(Q19$ACT)
+Y.bar <- mean(Q19$GPA)
+SSX <- sum(Q19$ACT^2)-sum(Q19$ACT)^2/120
+SSXY <- sum(Q19$GPA*Q19$ACT) - (sum(Q19$GPA)*sum(Q19$ACT))/120
+b.1 <- SSXY/SSX
+b.0 <- Y.bar - b.1*X.bar
+
+SSY <- sum(Q19$GPA^2)-sum(Q19$GPA)^2/120
+SSE <- SSY - SSXY^2/SSX
+MSE <- SSE/118
+
+UB.b1 <- b.1 + qt(0.99,118)*sqrt(MSE/SSX)
+LB.b1 <- b.1 - qt(0.99,118)*sqrt(MSE/SSX)
+
+b.1
+b.0
+LB.b1
+UB.b1
+```
+
+$Y = 2.114 + 0.039 x_i + \epsilon$  
+$\beta_1$ confidence interval is 0.008703684 - 0.06895057 which captures the true $\beta_1$ 99% of the time
+The interval does not include zero, but is very close. This matters because if $\beta_1$ is zero, then there is no demonstrated relationship between x and y.
+
+
+### 2.5 a and e
+```{r}
+model20<-lm(Q20$Min~Q20$Copiers)
+summary(model20)
+
+X.bar.20 <- mean(Q20$Copiers)
+Y.bar.20 <- mean(Q20$Min)
+SSX.20 <- sum(Q20$Copiers^2)-sum(Q20$Copiers)^2/45
+SSXY.20 <- sum(Q20$Min * Q20$Copiers) - (sum(Q20$Min)*sum(Q20$Copiers))/45
+b.1.20 <- SSXY.20/SSX.20
+b.0.20<- Y.bar.20 - b.1.20 * X.bar.20
+
+SSY.20 <- sum(Q20$Min^2)-sum(Q20$Min)^2/45
+SSE.20 <- SSY.20 - SSXY.20^2/SSX.20
+MSE.20 <- SSE.20/43
+
+UB.b1.20 <- b.1.20 + qt(0.90,43)*sqrt(MSE.20/SSX.20)
+LB.b1.20 <- b.1.20 - qt(0.90,43)*sqrt(MSE.20/SSX.20)
+
+b.1.20
+b.0.20
+LB.b1.20
+UB.b1.20
+```
+
+
+$Y = -0.580 + 15.035 x_i + \epsilon$  
+$\beta_1$ confidence interval is 14.40649 to 15.66401  
+Based on this model, each additional copier will increase the service time by 14.40649 to 15.66401 minutes. The model will accurately reflect the true $\beta_1$  90% of the time.  
+$\beta_0$ indicates that there is not a significant amount of start up time to calls. If there were a significant time, $\beta_0$ would be greater than zero.  
+
+
+### 2.63
+```{r}
+C2.1<- C2[ which(C2$Region==1),] # 103 obs
+C2.2<- C2[ which(C2$Region==2),] # 108 obs
+C2.3<- C2[ which(C2$Region==3),] # 152 obs
+C2.4<- C2[ which(C2$Region==4),] # 77 obs
+```
+
+#### Region One
+```{r}
+modelC2.1<-lm(C2.1$PerCapitaIncome ~ C2.1$Bachelor)
+summary(modelC2.1)
+confint (modelC2.1, level = 0.90)
+```
+
+#### Region Two
+```{r}
+modelC2.2<-lm(C2.2$PerCapitaIncome ~ C2.2$Bachelor)
+summary(modelC2.2)
+confint (modelC2.2, level = 0.90)
+```
+
+#### Region Three
+```{r}
+modelC2.3<-lm(C2.3$PerCapitaIncome ~ C2.3$Bachelor)
+summary(modelC2.3)
+confint (modelC2.3, level = 0.90)
+```
+
+#### Region Four
+```{r}
+modelC2.4<-lm(C2.4$PerCapitaIncome ~ C2.4$Bachelor)
+summary(modelC2.4)
+confint (modelC2.4, level = 0.90)
+```
+
+Region One $\beta_1$ is 522.16 with 90% CI (460.5177 - 583.80)  
+Region Two $\beta_1$ is 238.67 with 90%  CI (193.4858 - 283.853)  
+Region Three $\beta_1$ is 330.661 with 90% CI (285.7076 - 375.5158)  
+Region Four $\beta_1$ is 440.32 with 90% CI (364.7585 - 515.8729)  
+
+Slopes of regression lines from the various regions are not the same. Region one, for example has the highest $\beta_1$, and is more than twice that of region two. Therefore increasing the percentage of the population with a bachelors degree will not have the same impact in all regions.
