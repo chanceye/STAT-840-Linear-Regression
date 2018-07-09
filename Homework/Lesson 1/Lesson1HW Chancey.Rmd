@@ -1,0 +1,318 @@
+---
+title: "Lesson 1 Homework"
+author: "Ellen Chancey"
+date: "September 10, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("C:/Users/EC052367/Documents/MS-ASA/STAT 840 Linear Regression/Homework/Lesson 1")
+rm(list=ls())  
+```
+  
+  
+### Question 1.10  
+It does not imply the salary peaks at 47 because the sample contains only those up to 46 years old. This data cannot provide meaningful conclusions for ages outside its range.  
+
+
+### Question 1.11 
+The observer has misinterpreted the equation. While $\beta_1$ is below one, $\beta_0$ is relatively high for the interval 40 to 100, and will offset the 5% reduction from $\beta_1$ for all potential values on the interval.  
+
+
+### Question 1.12  
+a) Observational
+b) The conclusions are not valid because a relationship between the two variables does not indicate causality.
+c) A seperate health concern could restrict a senior's ability to exercise and increase their likelihood of illness. Seniors who exercise frequently may also take more vitamins. Wealthier seniors may be more likely to exercise and have better access to healthcare.  
+d) It would be possible to design an experiment where seniors are instructed to exercise a certain amount, however it would not be realistic to assign illness to them.  
+
+
+### Question 1.13
+a) Observational  
+b) The conclusion is invalid because no change in productivity was measured - it is unclear if productivity was different before and after.  
+c) Highly committeed employees may be more likely to work harder. An employee may have gotten sick and be unable to prepare for class and their productivity could also be impacted by their illness.  
+
+
+### Question 1.16
+The statement is not true because the distribution of y is not required to be normal. Other distributions are effective with the least squares method.  
+
+
+### Question 1.19
+#### Reading the data in and reviewing the variables
+```{r}
+Q19<-read.csv("Q19.csv")
+summary(Q19)
+```
+  
+#### Plotting the data
+```{r}
+plot(Q19$ACT,Q19$GPA, xlab="ACT Score", ylab="GPA", main="Relationship between ACT Score and GPA")
+```
+  
+#### Establishing the linear equation 
+```{r}
+model<-lm(Q19$GPA~Q19$ACT)
+summary(model)
+```
+  
+$\beta_0$ is 2.114
+$\beta_1$ is 0.04  
+
+
+#### Adding regression line to plot
+```{r}
+plot(Q19$ACT,Q19$GPA, xlab="ACT Score", ylab="GPA", main="Relationship between ACT Score and GPA")
+abline(lm(model), col="blue")
+```
+
+a) $Y=2.114+0.04x_i+\epsilon$  
+
+b) Yes, the estimated regression function appears to fit the data well.  
+
+c) Point estimate when ACT test score is 30 is
+```{r}
+act30<-2.114+(0.04*30)
+act30
+```
+
+d) Point estimate when ACT test score is 31 is
+```{r}
+act31<-2.114+(0.04*31)
+act31
+```
+  
+
+### Question 1.20
+#### Reading the data in and reviewing the variables
+```{r}
+Q20<-read.csv("Q20.csv")
+summary(Q20)
+```
+  
+#### Plotting the data
+```{r}
+plot(Q20$Copiers,Q20$Min, xlab="Number of Copiers", ylab="Minutes")
+```
+  
+#### Establishing the linear equation 
+```{r}
+model20<-lm(Q20$Min~Q20$Copiers)
+summary(model20)
+B020<- -0.5802
+B120<- 15.0352
+```
+  
+$\beta_0$ is
+```{r}
+B020
+```
+
+$\beta_1$ is
+```{r}
+B120
+```
+
+a) $Y=-0.5802+15.0352x_i+\epsilon$  
+  
+  
+#### Adding regression line to plot
+b) The estimated regression function appears to fit the data well. 
+```{r}
+plot(Q20$Copiers,Q20$Min, xlab="Number of Copiers", ylab="Minutes", main="Relationship between number of copiers and minutes spent on service")
+abline(lm(model20), col="blue")
+```
+
+c) $\beta_1$ is not very meaningful here, because all calls will have atleast one copier associated with them that needs maintenence  
+
+d) Point estimate when number of copiers is 5 is
+```{r}
+B020+(B120*5)
+```
+
+
+
+
+
+### Question 1.21
+#### Reading the data in and reviewing the variables
+```{r}
+Q21<-read.csv("Q21.csv")
+summary(Q21)
+```
+  
+#### Plotting the data
+```{r}
+plot(Q21$trans,Q21$amp, xlab="Number of Transfers", ylab="Number of Broken Ampules", main="Relationship between transfers and broken ampules")
+```
+  
+#### Establishing the linear equation 
+```{r}
+model21<-lm(Q21$amp~Q21$trans)
+summary(model21)
+B021<- 10.2
+B121<- 4.0
+```
+  
+$\beta_0$ is
+```{r}
+B021
+```
+
+$\beta_1$ is
+```{r}
+B121
+```
+
+a) $Y=10.2+4x_i+\epsilon$  
+  
+  
+#### Adding regression line to plot
+The estimated regression function appears to fit the data well. 
+```{r}
+plot(Q21$trans,Q21$amp, xlab="Number of Transfers", ylab="Number of Broken Ampules", main="Relationship between transfers and broken ampules")
+abline(lm(model21), col="blue")
+```
+
+
+b) Point estimate when number of transfers is 1
+```{r}
+Trans1<-B021+(B121*1)
+Trans1
+```
+
+c) The difference between the number of ampules broken between one transfer and two transfers is
+```{r}
+Trans2<-B021+(B121*2)
+Trans2
+
+Delta<-Trans2-Trans1
+Delta
+```
+
+
+
+### Question 1.45
+
+```{r}
+Q45<-read.csv("Q45.csv")
+```
+
+
+#### Infection Risk
+```{r}
+model45IR<-lm(Q45$LOS~Q45$IR)
+plot(Q45$IR,Q45$LOS, xlab="Infection Risk", ylab="Length of Stay", main="Relationship between infection risk and length of stay")
+abline(lm(model45IR), col="blue")
+summary(model45IR)
+mseIR <- mean(residuals(model45IR)^2)
+mseIR
+```
+Equation: $Y=6.3368+0.7604x_i+\epsilon$   
+Residual Standard Error 1.624 - this equation has the smallest amount of error.  
+
+
+
+#### Available Facilities
+```{r}
+model45FAC<-lm(Q45$LOS~Q45$FAC)
+plot(Q45$FAC,Q45$LOS, xlab="Available Facilities", ylab="Length of Stay", main="Relationship between available facilities and length of stay")
+abline(lm(model45FAC), col="blue")
+summary(model45FAC)
+mseF <- mean(residuals(model45FAC)^2)
+mseF
+```
+$Y=7.72877+0.04471x_i+\epsilon$   
+There is not a strong linear relationship with Available Facilities.  
+
+
+
+#### X-Ray Ratio
+```{r}
+model45XRR<-lm(Q45$LOS~Q45$XRR)
+plot(Q45$XRR,Q45$LOS, xlab="X-Ray Ratio", ylab="Length of Stay", main="Relationship between X-Ray Ratio and length of stay")
+abline(lm(model45XRR), col="blue")
+summary(model45XRR)
+mseX <- mean(residuals(model45XRR)^2)
+mseX
+```
+$Y=6.566373+0.037756x_i+\epsilon$   
+
+  
+  
+  
+### Question 1.46  
+```{r}
+Q45NE<- Q45[ which(Q45$Region==1),]
+Q45NC<- Q45[ which(Q45$Region==2),]
+Q45S<- Q45[ which(Q45$Region==3),]
+Q45W<- Q45[ which(Q45$Region==4),]
+```
+  
+#### Northeast  
+```{r}
+model45NE<-lm(Q45NE$LOS~Q45NE$IR)
+plot(Q45NE$IR,Q45NE$LOS, xlab="Infection Risk", ylab="Length of Stay", main="Relationship between infection risk and length of stay in the Northeast")
+abline(lm(model45NE), col="blue")
+summary(model45NE)
+``` 
+$Y=4.5379+1.3477x_i+\epsilon$   
+
+  
+  
+#### North Central
+```{r}
+model45NC<-lm(Q45NC$LOS~Q45NC$IR)
+plot(Q45NC$IR,Q45NC$LOS, xlab="Infection Risk", ylab="Length of Stay", main="Relationship between infection risk & length of stay in North Central Region")
+abline(lm(model45NC), col="blue")
+summary(model45NC)
+``` 
+$Y=7.5605+0.4832x_i+\epsilon$ 
+
+
+
+#### South
+```{r}
+model45S<-lm(Q45S$LOS~Q45S$IR)
+plot(Q45S$IR,Q45S$LOS, xlab="Infection Risk", ylab="Length of Stay", main="Relationship between infection risk and length of stay in the South")
+abline(lm(model45S), col="blue")
+summary(model45S)
+``` 
+$Y=7.1293+0.5251x_i+\epsilon$ 
+
+
+#### West
+```{r}
+model45W<-lm(Q45W$LOS~Q45W$IR)
+plot(Q45W$IR,Q45W$LOS, xlab="Infection Risk", ylab="Length of Stay", main="Relationship between infection risk and length of stay in the West")
+abline(lm(model45W), col="blue")
+summary(model45W)
+mseWest <- mean(residuals(model45W)^2)
+mseWest
+``` 
+$Y=8.03805+0.01728x_i+\epsilon$ 
+
+#### Function Similarities
+West region data is the most divergent from the other regions, where length of stay and infection risk have almost no relationship at all.
+
+
+#### MSE
+```{r}
+mseNE <- mean(residuals(model45NE)^2)
+mseNC <- mean(residuals(model45NC)^2)
+mseS <- mean(residuals(model45S)^2)
+mseW <- mean(residuals(model45W)^2)
+
+mseNE
+mseNC
+mseS
+mseW
+```
+ 
+MSE for the Northeast is much higher than for the others. Considering its great variety in LOS for higher infection risks, this make sense. On the other hand, the South having the smallest MSE is misleading because there is little if any relationship within the data.  
+
+
+
+#### Session Information
+```{r session-info}
+sessionInfo()
+```
