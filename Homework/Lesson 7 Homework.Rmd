@@ -1,0 +1,624 @@
+---
+title: "Lesson 7 Homework"
+author: "Ellen Chancey"
+date: "December 3, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+ 
+library(faraway)
+library(leaps)
+
+# lesson 7 homework
+setwd("C:/Users/EC052367/Documents/MS-ASA/STAT 840 Linear Regression/Homework/Lesson 7")
+rm(list=ls())
+
+
+################################### QUESTION 9.25 ################################### 
+
+# import SENIC data from Appendix C of the book
+C <- read.csv("C1 SENIC.csv")
+
+# subset for observations 57 to 113 and cols 10-12, excluded med school affiliation and region
+incl <- c(1:7,10:12)
+C1 <- C[57:113,incl]
+xlist <- c(3:10)
+
+summary(C1)
+
+# set variables
+y <- log(C1$los)
+x1 <- C1$age
+x2 <- C1$ir
+x3 <- C1$rcr
+x4 <- C1$xrr
+x5 <- C1$beds
+x6 <- C1$adc
+x7 <- C1$nn
+x8 <- C1$afs
+
+
+#############################################################################################
+# create strip charts and box plots of each variable to evaluate distribution
+
+stripchart(x1, main = "x1 Average Age", vertical= T, method = "jitter")
+boxplot(x1, main = "x1 Average Age")
+# even distribution, one really smaller value
+
+stripchart(x2, main = "x2 Infection Risk", vertical= T, method = "jitter")
+boxplot(x2, main = "x2 Infection Risk")
+# pretty consistent
+
+stripchart(x3, main = "x3 Routine Culture Rate", vertical= T, method = "jitter")
+boxplot(x3, main = "x3 Routine Culture Rate")
+# bottom skewed with a couple large values
+
+stripchart(x4, main = "x4 X Ray Ratio", vertical= T, method = "jitter")
+boxplot(x4, main = "x4 X Ray Ratio")
+# pretty consistent
+
+stripchart(x5, main = "x5 Beds", vertical= T, method = "jitter")
+boxplot(x5, main = "x5 Beds")
+# a little bottom skewed
+
+stripchart(x6, main = "x6 Average Daily Census", vertical= T, method = "jitter")
+boxplot(x6, main = "x6 Average Daily Census")
+# bottom skewed even more
+
+stripchart(x7, main = "x7 Number of Nurses", vertical= T, method = "jitter")
+boxplot(x7, main = "x7 Number of Nurses")
+# cluster at bottom
+
+stripchart(x8, main = "x8 Available Facilities and Services", vertical= T, method = "jitter")
+boxplot(x8, main = "x8 Available Facilities and Services")
+# three distinct clusters, one very small value on its own
+
+
+#############################################################################################
+pairs(y~x1+x2+x3+x4)
+pairs(y~x5+x6+x7+x8)
+
+# comments
+# strong linear correlation between daily census (6) and beds (5)
+# strong linear correlation between daily census (6) and number of nurses (7)
+# strong linear relationship between facilities (8) and 5, 6, and 7.
+# linear relationship between routine culture rate (3) and infection risk (2)
+# loose linear relationship between xray ratio (4) and  infection risk (2)
+# loose linear relationshp between beds (5) and infection risk (2)
+# loose linear relationship between nurses (7) and infection risk (2)
+
+
+# list of columns included in the model
+cor(C1[,xlist])
+# comments
+# again number of nurses, number of beds, average daly census, and available facilities and services
+# have a strong relationship
+# infection source also has a relationship with a handful of other variables.
+
+
+#############################################################################################
+# Cp values, find best three models
+
+# from lecture
+library(leaps)
+model <- regsubsets(log(y) ~ age + ir + rcr + xrr + beds + adc + nn + afs, data = C1)
+modelsum <- summary(model)
+modelsum
+# three variables has almost as much as the complete model with 8.87
+# the 3 model has age, xray ratio and average daily census
+
+# Cp values in visual form
+modelsum$cp # cp
+plot(modelsum$c, xlab = "Number of Parameters", ylab = expression(C[p]))
+abline(h=4)
+# you want Cp to be closest to the number of betas in the model, the number of xs plus one
+# in this case there are eight xs plus beta zero, so 9
+# the final model has a Cp of 9, although the third model has a close Cp. The seventh model
+# has the third highest Cp value.
+
+
+
+################################### QUESTION 9.27 ################################### 
+
+# subset for observations 57 to 113 and cols 10-12, excluded med school affiliation and region
+
+C2 <- C[1:56,incl]
+summary(C2)
+model3v <- lm(log(los) ~ age + xrr + adc, data = C2)
+summary(model3v)
+
+
+```
+
+# Question 9.25
+
+### Dot plots of each predictor variable  
+
+##### Average Age  
+This predictor variable has a relatively even distribution, with one very small value.
+```{r}
+stripchart(x1, main = "x1 Average Age", vertical= T, method = "jitter")
+boxplot(x1, main = "x1 Average Age")
+```
+
+##### Infection Risk  
+This predictor variable has a consistent distribution.
+```{r}
+stripchart(x2, main = "x2 Infection Risk", vertical= T, method = "jitter")
+boxplot(x2, main = "x2 Infection Risk")
+```
+
+##### Routine Culture Rate
+This predictor variable has some skewness with a couple large values.
+```{r}
+stripchart(x3, main = "x3 Routine Culture Rate", vertical= T, method = "jitter")
+boxplot(x3, main = "x3 Routine Culture Rate")
+```
+
+##### XRay Ratio  
+This predictor variable has a consistent distribution
+```{r}
+stripchart(x4, main = "x4 X Ray Ratio", vertical= T, method = "jitter")
+boxplot(x4, main = "x4 X Ray Ratio")
+```
+
+##### Number of Beds  
+This predictor variable has some skewness
+```{r}
+stripchart(x5, main = "x5 Beds", vertical= T, method = "jitter")
+boxplot(x5, main = "x5 Beds")
+```
+
+##### Average Daily Census  
+This predictor variable has skewness
+```{r}
+stripchart(x6, main = "x6 Average Daily Census", vertical= T, method = "jitter")
+boxplot(x6, main = "x6 Average Daily Census")
+```
+
+##### Number of Nurses  
+This predictor variable has a large cluster under 200.
+```{r}
+stripchart(x7, main = "x7 Number of Nurses", vertical= T, method = "jitter")
+boxplot(x7, main = "x7 Number of Nurses")
+
+```
+
+##### Available Facilities and Services  
+This predictor variable has three distinct clusters, with one very small outlier. 
+```{r}
+stripchart(x8, main = "x8 Available Facilities and Services", vertical= T, method = "jitter")
+boxplot(x8, main = "x8 Available Facilities and Services")
+```
+
+### Scatterplot Matrix
+```{r}
+pairs(y~x1+x2+x3+x4)
+pairs(y~x5+x6+x7+x8)
+```
+
+**Comments**  
+* Strong linear correlation between daily census (6) and beds (5)  
+* Strong linear correlation between daily census (6) and number of nurses (7)  
+* Strong linear relationship between facilities (8) and 5, 6, and 7.  
+* Linear relationship between routine culture rate (3) and infection risk (2)  
+* Loose linear relationship between xray ratio (4) and  infection risk (2)  
+* Loose linear relationshp between beds (5) and infection risk (2)  
+* Loose linear relationship between nurses (7) and infection risk (2)  
+
+### Correlation Matrix
+```{r}
+cor(C1[,xlist])
+```
+
+**Comments**  
+* Again number of nurses, number of beds, average daly census, and available facilities and services have a strong relationship  
+* Infection source also has a relationship with a handful of other variables. 
+
+### Best 3 Subsets According to $C_p$
+```{r}
+model <- regsubsets(log(los) ~ age + ir + rcr + xrr + beds + adc + nn + afs, data = C1)
+modelsum <- summary(model)
+modelsum
+```
+
+$C_p$ values
+```{r}
+modelsum$cp # cp
+```
+
+**Comments**  
+* Models four, five, and six have the best $C_p$values with `r modelsum$cp[4]`, `r modelsum$cp[5]`, `r modelsum$cp[6]` respectively.  
+* The predictor variables included in model four are all included in models five and six.  
+* Model four has a $C_p$ value closest to the number of p in the model.
+
+### $C_p$ Values Plotted 
+*Note the horizontal line = 4*
+```{r}
+plot(modelsum$cp, xlab = "Number of Parameters", ylab = expression(C[p]))
+abline(h=4)
+```
+
+
+### Model Comparison  
+Because the three models had similar $C_p$ values, a closer look at each is required. The $R^2$ and adjusted $R^2$ values are evaluated.
+```{r}
+model4 <- lm( log(los) ~ age + xrr + adc + nn , data = C1)
+model5 <- lm( log(los) ~ age + rcr + xrr + adc + nn , data = C1)
+model6 <- lm( log(los) ~ age + rcr + xrr + beds + adc + nn , data = C1)
+
+ms4 <- summary(model4)
+ms5 <- summary(model5)
+ms6 <- summary(model6)
+
+ms4$adj.r.squared
+ms5$adj.r.squared
+ms6$adj.r.squared
+```
+
+**Comments**  
+The adjusted $R^2$ of models four, five, and six are `r ms4$adj.r.squared`, `r ms5$adj.r.squared`, and `r ms6$adj.r.squared` respectively. These values are all very similar and do not eliminate any model from consideration.  
+
+**Based on values of $R^2$ and $C_p$, model four is selected and will undergo validation.**
+
+
+# Question 9.25
+
+## Validation of Model
+
+```{r}
+C2 <- C[1:56,incl]
+model4v <- lm(log(los) ~ age + xrr + adc + nn , data = C2)
+ms4v <- summary(model4v)
+ms4v
+```
+
+### Comparison of values  
+
+Original coefficients
+```{r}
+ms4$coefficients
+```
+
+Validation coefficients
+```{r}
+ms4v$coefficients
+```
+
+**Coefficient Comments**  
+* Age coeff is smaller in model 4v by `r ms4v$coefficients[2]-ms4$coefficients[2]`.  
+* X ray rate coeff is smaller in model 4v by `r ms4v$coefficients[3]-ms4$coefficients[3]`.  
+* Average daily census is larger in model 4v by`r ms4$coefficients[4]-ms4v$coefficients[4]`.  
+* Number of nurses coeff is smaller in model 4v by`r ms4$coefficients[5]-ms4v$coefficients[5]`.
+
+
+**Residual standard error**  
+Sigma for the validation model 4v is slightly larger
+```{r}
+ms4$sigma
+ms4v$sigma
+```
+
+**Adjusted $R^2$**  
+The adjusted $R^2$ value for the validation model is quite a bit lower.
+```{r}
+ms4$adj.r.squared
+ms4v$adj.r.squared
+```
+
+### Applying model to entire dataset
+```{r}
+modelall <- lm(log(los) ~ age + xrr + adc + nn, data = C)
+msa <- summary(modelall)
+msa
+```
+
+# Question 10.27
+
+## Plot Residuals by Xs  
+There are no problems with the partial residual plots.
+```{r}
+prplot(modelall,1)
+prplot(modelall,2)
+prplot(modelall,3)
+prplot(modelall,4)
+```
+
+## Plot Residuals by Y  
+The fitted Y vs. residual plot indicate that the residuals are linearly related to Y and that they are constant. No modification is required.
+```{r}
+plot(rstandard(modelall)~predict(modelall), xlab = expression(hat(Y)), ylab = "Studentized Deleted Residuals")
+abline(h=0)
+```
+
+## QQ Plot  
+This plot does not indicate any significant problems with the normality of residuals.
+```{r}
+qqnorm(residuals(modelall), main = "Normal Probability Plot Residuals")
+qqline(residuals(modelall))
+```
+
+## Evaluating Multicolinearity
+
+## Scatterplot Matrix
+```{r}
+pairs(log(los)~ age + xrr + adc + nn, data = C)
+```
+
+## Correlation Matrix  
+Average daily census and number of nurses are highly correlated. VIF should be considered to determine the influence of this colinearity.
+```{r}
+# xlist is list of columns included in the model
+modelx <- c(3,6,10,11)
+cor(C[,modelx])
+```
+
+
+## Variance Inflation Factor  
+None of the VIF values are above 10, therefore any multicolinarity within the data does not have an impact on the model.
+```{r}
+vif(modelall)
+```
+
+
+## Independence of Residuals  
+The sequence plot below indicates that the resiudals are independent.
+```{r}
+plot(residuals(modelall),type="l",ylab=expression(e[i]),main="Sequence Plot of Residuals")
+points(residuals(modelall),pch=16,col="darkgray")
+abline(0,0,lty=2)
+summary(lm(residuals(modelall)[-1]~-1+residuals(modelall)[-47]))
+```
+
+
+## Evaluating Outliars and Influence Points
+
+## Cook's Distance  
+There are two observations with larger Cook's Distance values.
+```{r}
+mi <- influence(modelall) # Save influence stats
+halfnorm(cooks.distance(modelall))
+```
+
+## Test Model without Observation 47  
+Observation 47 does not have a significant impact on the model and will be kept.
+```{r}
+summary(modelall)
+summary(lm(log(los) ~ age + xrr + adc + nn, data = C, subset = -47))
+```
+
+
+# Full Script
+
+```{r eval=FALSE}
+ 
+
+# lesson 7 homework
+setwd("C:/Users/EC052367/Documents/MS-ASA/STAT 840 Linear Regression/Homework/Lesson 7")
+rm(list=ls())
+
+
+################################### QUESTION 9.25 ################################### 
+
+# import SENIC data from Appendix C of the book
+C <- read.csv("C1 SENIC.csv")
+
+# subset for observations 57 to 113 and cols 10-12, excluded med school affiliation and region
+incl <- c(1:7,10:12)
+C1 <- C[57:113,incl]
+xlist <- c(3:10)
+
+summary(C1)
+
+# set variables
+y <- C1$los
+x1 <- C1$age
+x2 <- C1$ir
+x3 <- C1$rcr
+x4 <- C1$xrr
+x5 <- C1$beds
+x6 <- C1$adc
+x7 <- C1$nn
+x8 <- C1$afs
+
+
+#############################################################################################
+# create strip charts and box plots of each variable to evaluate distribution
+
+stripchart(x1, main = "x1 Average Age", vertical= T, method = "jitter")
+boxplot(x1, main = "x1 Average Age")
+# even distribution, one really smaller value
+
+stripchart(x2, main = "x2 Infection Risk", vertical= T, method = "jitter")
+boxplot(x2, main = "x2 Infection Risk")
+# pretty consistent
+
+stripchart(x3, main = "x3 Routine Culture Rate", vertical= T, method = "jitter")
+boxplot(x3, main = "x3 Routine Culture Rate")
+# bottom skewed with a couple large values
+
+stripchart(x4, main = "x4 X Ray Ratio", vertical= T, method = "jitter")
+boxplot(x4, main = "x4 X Ray Ratio")
+# pretty consistent
+
+stripchart(x5, main = "x5 Beds", vertical= T, method = "jitter")
+boxplot(x5, main = "x5 Beds")
+# a little bottom skewed
+
+stripchart(x6, main = "x6 Average Daily Census", vertical= T, method = "jitter")
+boxplot(x6, main = "x6 Average Daily Census")
+# bottom skewed even more
+
+stripchart(x7, main = "x7 Number of Nurses", vertical= T, method = "jitter")
+boxplot(x7, main = "x7 Number of Nurses")
+# cluster at bottom
+
+stripchart(x8, main = "x8 Available Facilities and Services", vertical= T, method = "jitter")
+boxplot(x8, main = "x8 Available Facilities and Services")
+# three distinct clusters, one very small value on its own
+
+
+#############################################################################################
+# create cross tab of relationships
+pairs(y~x1+x2+x3+x4+x5+x6+x7+x8)
+# comments
+
+# strong linear correlation between daily census (6) and beds (5)
+# strong linear correlation between daily census (6) and number of nurses (7)
+# strong linear relationship between facilities (8) and 5, 6, and 7.
+# linear relationship between routine culture rate (3) and infection risk (2)
+# loose linear relationship between xray ratio (4) and  infection risk (2)
+# loose linear relationshp between beds (5) and infection risk (2)
+# loose linear relationship between nurses (7) and infection risk (2)
+
+
+# list of columns included in the model
+cor(C1[,xlist])
+# comments
+# again number of nurses, number of beds, average daly census, and available facilities and services
+# have a strong relationship
+# infection source also has a relationship with a handful of other variables.
+
+
+#############################################################################################
+# Cp values, find best three models
+
+# from lecture
+library(leaps)
+model <- regsubsets(los ~ age + ir + rcr + xrr + beds + adc + nn + afs, data = C1)
+modelsum <- summary(model)
+modelsum
+# three variables has almost as much as the complete model with 8.87
+# the 3 model has age, xray ratio and average daily census
+
+# Cp values in visual form
+modelsum$cp # cp
+plot(modelsum$c, xlab = "Number of Parameters", ylab = expression(C[p]))
+abline(h=9)
+# you want Cp to be closest to the number of betas in the model, the number of xs plus one
+# in this case there are eight xs plus beta zero, so 9
+# the final model has a Cp of 9, although the third model has a close Cp. The seventh model
+# has the third highest Cp value.
+
+#############################################################################################
+# model comparison
+
+model3 <- lm(los ~ age + xrr + adc, data = C1)
+modelf <- lm(los ~ age + ir + rcr + xrr + beds + adc + nn + afs, data = C1)
+summary(model3)
+summary(modelf)
+# adjusted r2 values are not very different, so go with model three.
+
+
+library(faraway)
+vif(model3)
+vif(model3v)
+
+
+################################### QUESTION 9.27 ################################### 
+
+# subset for observations 57 to 113 and cols 10-12, excluded med school affiliation and region
+
+C2 <- C[1:56,incl]
+summary(C2)
+model3v <- lm(los ~ age + xrr + adc, data = C2)
+ms3v <- summary(model3v)
+ms3 <- summary(model3)
+ms3
+
+# Comparison of values
+
+# original coefficients
+ms3$coefficients
+ms3v$coefficients
+
+# age coeff is slightly larger in model 3v by 
+ms3v$coefficients[2]-ms3$coefficients[2]
+
+# x ray coeff is larger in model 3v by
+ms3v$coefficients[3]-ms3$coefficients[3]
+
+# avg daily census is smaller in model 3v by
+ms3$coefficients[4]-ms3v$coefficients[4]
+
+# these numbers do not appear significantly diferent
+
+
+# residual standard error
+ms3$sigma
+ms3v$sigma
+# signma for model 3v is larger
+
+
+# adjusted r square
+ms3$adj.r.squared
+ms3v$adj.r.squared
+# adjust r2 is much smaller in model3v
+
+
+
+
+
+################################### QUESTION 10.27 ################################### 
+
+# plot residuals against each x seperately
+
+# Question 10.27
+
+## Plot Residuals by Xs
+prplot(modelall,1)
+prplot(modelall,2)
+prplot(modelall,3)
+prplot(modelall,4)
+
+
+## Plot Residuals by Y
+plot(rstandard(modelall)~predict(modelall), xlab = expression(hat(Y)), ylab = "Studentized Deleted Residuals")
+abline(h=0)
+
+# Based on the partial residual plits and fitted Y vs residual plot, no modifications are required.*
+  
+## QQ Plot  
+# This plot does not indicate any significant problems.
+qqnorm(residuals(modelall), main = "Normal Probability Plot Residuals")
+qqline(residuals(modelall))
+
+
+## Scatterplot Matrix
+pairs(log(los)~ age + xrr + adc + nn, data = C)
+
+## Correlation Matrix  
+# Average daily census and number of nurses are highly correlated. VIF should be considered to determine the influence of this colinearity.
+# xlist is list of columns included in the model
+modelx <- c(3,6,10,11)
+cor(C[,modelx])
+
+
+## Variance Inflation Factor  
+# None of the VIF values are above 10, therefore any multicolinarity within the data does not have an impact on the model.
+vif(modelall)
+
+## Residuals
+plot(residuals(modelall),type="l",ylab=expression(e[i]),main="Sequence Plot of Residuals")
+points(residuals(modelall),pch=16,col="darkgray")
+abline(0,0,lty=2)
+summary(lm(residuals(modelall)[-1]~-1+residuals(modelall)[-47]))
+
+## Cook's Distance
+mi <- influence(modelall) # Save influence stats
+halfnorm(cooks.distance(modelall))
+
+# Test Model without Observation 47  
+# Observation 47 does not have a significant impact on the model and will be kept.
+summary(modelall)
+summary(lm(log(los) ~ age + xrr + adc + nn, data = C, subset = -47))
+
+
+
+```
+
+
+
+
