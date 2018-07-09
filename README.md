@@ -1,2 +1,3 @@
 # STAT-840-Linear-Regression
-tbd
+
+Coursework for Linear Regression course
